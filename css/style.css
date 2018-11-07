@@ -1,0 +1,13 @@
+#sel1{
+    width: 20%;
+    height: 30px;
+}
+
+table.intra,th.intra,td.intra{
+    border:1px solid black;
+}
+table.intra{
+    width: 100%;
+    text-align: center;
+}
+

@@ -1,0 +1,44 @@
+<?php
+include_once 'inc/top.php';
+
+$snimi = filter_input(INPUT_POST, 'snimi',FILTER_SANITIZE_STRING);
+$enimi = filter_input(INPUT_POST, 'enimi',FILTER_SANITIZE_STRING);
+
+try {
+    $tietokanta->beginTransaction();
+    $sql = "insert into HENKILO (snimi,enimi, yritys, puh, email, osoite, postinro, postitmp, kirtunnus, kirsalasana, )
+        values (:snimi,:enimi, :yritys, :puh, :email, :osoite, :postinro, :postitmp, :kirtunnus, :kirsalasana);";
+
+    $kysely = $tietokanta->prepare($sql);
+    $kysely->bindValue(':snimi',$snimi,PDO::PARAM_STR);
+    $kysely->bindValue(':enimi',$enimi,PDO::PARAM_STR);
+    $kysely->execute();
+
+    $asiakas_id = $tietokanta->lastInsertId();
+
+    $sql = "insert into tilaus (tilaus_id, astunnus, yritys_astunnus, tilauspvm, tila ENUM) values (:asiakas_id)";
+    $kysely = $tietokanta->prepare($sql);
+    $kysely->bindValue(':asiakas_id',$asiakas_id,PDO::PARAM_INT);
+    $kysely->execute();
+
+    $tilaus_id = $tietokanta->lastInsertId();
+
+    foreach ($_SESSION['kori'] as $tuote_id) {
+        $sql = "insert into tilausrivi (tilaus_id,tuote_id) "
+                . "values (:tilaus_id,:tuote_id)";
+        $kysely = $tietokanta->prepare($sql);
+        $kysely->bindValue(':tilaus_id',$tilaus_id,PDO::PARAM_INT);
+        $kysely->bindValue(':tuote_id',$tuote_id,PDO::PARAM_INT);
+        $kysely->execute(); 
+    }
+
+    unset($_SESSION['kori']);
+    $tietokanta->commit();
+    print "<p>Kiitos tilauksestasi!</p>";
+}
+catch (Exception $ex) {
+    $tietokanta->rollback();
+    print "<p>Häiriö verkkokaupassa, tilausta ei voitu tallentaa</p>";
+}
+include_once 'inc/bottom.php';
+?>
